@@ -22,25 +22,50 @@
         let tg = window.Telegram.WebApp;
         tg.expand(); // Mở full màn hình
 
-        function sendOrder() {
-            let data = {
+        let data = {
                 customer: document.getElementById("customer").value,
                 product: document.getElementById("product").value,
                 quantity: document.getElementById("quantity").value,
                 price: document.getElementById("price").value,
-                action: "create_order"
-            };
+                action: "create_order",
+                telegram_user_id: tg.initDataUnsafe?.user?.id
+        };
 
-            let dataString = JSON.stringify(data);
-        
-            // 2. Debug: Kiểm tra dữ liệu trước khi gửi
-            alert("Dữ liệu chuẩn bị gửi: " + dataString);
+        const n8nWebhookUrl = 'https://nlpilot.app.n8n.cloud/webhook-test/687494c6-435b-4a3d-aaad-1d96588ea9c8/webhook';
+
+        fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        })
+        .then(response => {
+            alert("Đã gửi đơn hàng thành công!");
+            tg.close(); // Đóng sau khi gửi thành công
+        })
+        .catch((error) => {
+            alert("Lỗi gửi đơn: " + error);
+        });
+
+        // function sendOrder() {
+        //     let data = {
+        //         customer: document.getElementById("customer").value,
+        //         product: document.getElementById("product").value,
+        //         quantity: document.getElementById("quantity").value,
+        //         price: document.getElementById("price").value,
+        //         action: "create_order",
+        //         telegram_user_id: tg.initDataUnsafe?.user?.id
+        //     };
+
+
+        //     let dataString = JSON.stringify(data);
             
-            // Gửi dữ liệu ngược lại về Bot (dưới dạng JSON string)
-            tg.sendData(dataString); 
+        //     // Gửi dữ liệu ngược lại về Bot (dưới dạng JSON string)
+        //     tg.sendData(dataString); 
             
-            // Đóng Mini App sau khi gửi
-            //tg.close();
+        //     // Đóng Mini App sau khi gửi
+        //     tg.close();
         }
     </script>
 </body>

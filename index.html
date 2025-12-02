@@ -17,22 +17,35 @@
     <input type="number" id="price" placeholder="Đơn giá">
     <button onclick="sendOrder()">Gửi Đơn Hàng</button>
 
-    <script>
-        // Khởi tạo WebApp
-        let tg = window.Telegram.WebApp;
-        tg.expand(); // Mở full màn hình
+<script>
+    // Khởi tạo WebApp
+    let tg = window.Telegram.WebApp;
+    tg.expand(); 
 
+    // CHỈ KHAI BÁO URL ở ngoài để dễ đọc
+    const n8nWebhookUrl = 'https://nlpilot.app.n8n.cloud/webhook-test/687494c6-435b-4a3d-aaad-1d96588ea9c8/webhook';
+
+    function sendOrder() {
+        // TOÀN BỘ LOGIC LẤY DATA VÀ GỌI FETCH PHẢI Ở TRONG HÀM NÀY
+        
+        // 1. Lấy dữ liệu khi người dùng bấm nút
         let data = {
-                customer: document.getElementById("customer").value,
-                product: document.getElementById("product").value,
-                quantity: document.getElementById("quantity").value,
-                price: document.getElementById("price").value,
-                action: "create_order",
-                telegram_user_id: tg.initDataUnsafe?.user?.id
+            customer: document.getElementById("customer").value,
+            product: document.getElementById("product").value,
+            quantity: document.getElementById("quantity").value,
+            price: document.getElementById("price").value,
+            action: "create_order",
+            // Lấy User ID
+            telegram_user_id: tg.initDataUnsafe?.user?.id 
         };
 
-        const n8nWebhookUrl = 'https://nlpilot.app.n8n.cloud/webhook-test/687494c6-435b-4a3d-aaad-1d96588ea9c8/webhook';
+        // 2. Kiểm tra dữ liệu cơ bản (Validation)
+        if (!data.customer || !data.product || data.quantity <= 0) {
+            tg.showAlert("Vui lòng điền đủ Tên khách hàng, Mã hàng và Số lượng hợp lệ.");
+            return; // Dừng nếu dữ liệu không hợp lệ
+        }
 
+        // 3. Thực hiện FETCH (Chỉ khi người dùng bấm nút)
         fetch(n8nWebhookUrl, {
             method: 'POST',
             headers: {
@@ -41,32 +54,19 @@
             body: JSON.stringify(data),
         })
         .then(response => {
-            alert("Đã gửi đơn hàng thành công!");
-            tg.close(); // Đóng sau khi gửi thành công
+            // Kiểm tra HTTP status code (ví dụ: 200, 202)
+            if (response.ok) {
+                tg.showAlert("Đã gửi đơn hàng thành công!");
+                tg.close();
+            } else {
+                tg.showAlert(`Lỗi HTTP: ${response.status}. Không gửi được đơn hàng.`);
+            }
         })
         .catch((error) => {
-            alert("Lỗi gửi đơn: " + error);
+            // Lỗi network hoặc lỗi khác
+            tg.showAlert("Lỗi kết nối mạng hoặc server: " + error.message);
         });
-
-        // function sendOrder() {
-        //     let data = {
-        //         customer: document.getElementById("customer").value,
-        //         product: document.getElementById("product").value,
-        //         quantity: document.getElementById("quantity").value,
-        //         price: document.getElementById("price").value,
-        //         action: "create_order",
-        //         telegram_user_id: tg.initDataUnsafe?.user?.id
-        //     };
-
-
-        //     let dataString = JSON.stringify(data);
-            
-        //     // Gửi dữ liệu ngược lại về Bot (dưới dạng JSON string)
-        //     tg.sendData(dataString); 
-            
-        //     // Đóng Mini App sau khi gửi
-        //     tg.close();
-        }
-    </script>
+    }
+</script>
 </body>
 </html>

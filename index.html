@@ -30,12 +30,17 @@
                 price: document.getElementById("price").value,
                 action: "create_order"
             };
+
+            let dataString = JSON.stringify(data);
+        
+            // 2. Debug: Kiểm tra dữ liệu trước khi gửi
+            alert("Dữ liệu chuẩn bị gửi: " + dataString);
             
             // Gửi dữ liệu ngược lại về Bot (dưới dạng JSON string)
-            tg.sendData(JSON.stringify(data)); 
+            tg.sendData(dataString); 
             
             // Đóng Mini App sau khi gửi
-            tg.close();
+            //tg.close();
         }
     </script>
 </body>

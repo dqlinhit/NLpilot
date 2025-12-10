@@ -5,14 +5,41 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; padding: 20px; }
-        input, select { width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box; }
-        button { background-color: #2481cc; color: white; border: none; padding: 10px 20px; width: 100%; border-radius: 5px; cursor: pointer; }
+        
+        /* CSS cho Label và Input/Select */
+        .form-group { margin-bottom: 15px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9em; /* Giảm kích thước font cho label */
+        }
+        
+        input, select { 
+            width: 100%; 
+            padding: 10px; 
+            box-sizing: border-box; 
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        button { 
+            background-color: #2481cc; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            width: 100%; 
+            border-radius: 5px; 
+            cursor: pointer;
+            margin-top: 10px;
+        }
         .total-display-container { 
             margin-bottom: 10px; 
             padding: 10px; 
             border: 1px solid #ccc; 
-            background-color: #f9f9f9; 
-            text-align: right; 
+            background-color: #e9e9e9; /* Màu nền khác biệt */
+            border-radius: 4px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -24,22 +51,39 @@
 <body>
     <h3>Lên Đơn Hàng Mới</h3>
     
-    <input type="date" id="deliveryDate" placeholder="Ngày nhận hàng"> 
-    <input type="text" id="customer" placeholder="Tên khách hàng">
+    <div class="form-group">
+        <label for="deliveryDate">Ngày nhận hàng:</label>
+        <input type="date" id="deliveryDate"> 
+    </div>
     
-    <select id="product">
-        <option value="">Chọn Sản phẩm (Mã hàng hóa)</option>
-        <option value="PE">Hạt nhựa PE (Polyethylene)</option>
-        <option value="PP">Hạt nhựa PP (Polypropylene)</option>
-        <option value="PVC">Hạt nhựa PVC (Polyvinyl Chloride)</option>
-        <option value="PET">Hạt nhựa PET (Polyethylene Terephthalate)</option>
-        <option value="ABS">Hạt nhựa ABS (Acrylonitrile Butadiene Styrene)</option>
-        <option value="PS">Hạt nhựa PS (Polystyrene)</option>
-        <option value="PA">Hạt nhựa PA (Polyamide/Nylon)</option>
-    </select>
+    <div class="form-group">
+        <label for="customer">Tên khách hàng:</label>
+        <input type="text" id="customer" placeholder="Nhập tên khách hàng">
+    </div>
     
-    <input type="number" id="quantity" placeholder="Số lượng" oninput="calculateTotal()">
-    <input type="number" id="price" placeholder="Đơn giá" oninput="calculateTotal()">
+    <div class="form-group">
+        <label for="product">Sản phẩm (Mã hàng hóa):</label>
+        <select id="product">
+            <option value="">-- Chọn Sản phẩm --</option>
+            <option value="PE">Hạt nhựa PE (Polyethylene)</option>
+            <option value="PP">Hạt nhựa PP (Polypropylene)</option>
+            <option value="PVC">Hạt nhựa PVC (Polyvinyl Chloride)</option>
+            <option value="PET">Hạt nhựa PET (Polyethylene Terephthalate)</option>
+            <option value="ABS">Hạt nhựa ABS (Acrylonitrile Butadiene Styrene)</option>
+            <option value="PS">Hạt nhựa PS (Polystyrene)</option>
+            <option value="PA">Hạt nhựa PA (Polyamide/Nylon)</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="quantity">Số lượng:</label>
+        <input type="number" id="quantity" placeholder="Nhập số lượng" oninput="calculateTotal()">
+    </div>
+    
+    <div class="form-group">
+        <label for="price">Đơn giá:</label>
+        <input type="number" id="price" placeholder="Nhập đơn giá" oninput="calculateTotal()">
+    </div>
     
     <div class="total-display-container">
         <span class="total-label">Thành tiền:</span>
@@ -53,7 +97,7 @@
     let tg = window.Telegram.WebApp;
     tg.expand(); 
 
-    // CHỈ KHAI BÁO URL ở ngoài để dễ đọc
+    // URL Webhook của n8n
     const n8nWebhookUrl = 'https://n8ncamundatest1.app.n8n.cloud/webhook-test/05aebebd-962b-4285-b2af-a62300358208';
 
     /**
@@ -72,23 +116,23 @@
             minimumFractionDigits: 0
         });
 
-        // Cập nhật hiển thị
+        // Cập nhật hiển thị và data-value (giá trị số)
         document.getElementById("totalAmountDisplay").textContent = formattedTotal;
-        // Lưu giá trị số vào data-value để gửi đi
         document.getElementById("totalAmountDisplay").dataset.value = total;
     }
 
+    /**
+     * Hàm gửi đơn hàng
+     */
     function sendOrder() {
-        // Lấy dữ liệu khi người dùng bấm nút
+        // 1. Lấy dữ liệu
         let data = {
             customer: document.getElementById("customer").value,
-            // Lấy giá trị từ Select (Drop-down list)
             product: document.getElementById("product").value, 
             quantity: document.getElementById("quantity").value,
             price: document.getElementById("price").value,
             
             deliveryDate: document.getElementById("deliveryDate").value,
-            // Lấy giá trị số từ data-value của trường Thành tiền
             totalAmount: document.getElementById("totalAmountDisplay").dataset.value, 
             
             action: "create_order",
@@ -96,10 +140,9 @@
         };
 
         // 2. Kiểm tra dữ liệu cơ bản (Validation)
-        // Bổ sung kiểm tra product (select) phải có giá trị
         if (!data.customer || !data.product || data.quantity <= 0 || !data.deliveryDate || data.totalAmount <= 0) {
             tg.showAlert("Vui lòng điền đủ Tên khách hàng, Chọn Sản phẩm, Số lượng, Đơn giá hợp lệ và Ngày nhận hàng.");
-            return; // Dừng nếu dữ liệu không hợp lệ
+            return; 
         }
 
         // 3. Thực hiện FETCH

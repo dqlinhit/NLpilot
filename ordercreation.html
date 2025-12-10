@@ -5,16 +5,47 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: sans-serif; padding: 20px; }
-        input, select { width: 100%; margin-bottom: 10px; padding: 10px; }
+        input, select { width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box; }
         button { background-color: #2481cc; color: white; border: none; padding: 10px 20px; width: 100%; border-radius: 5px; cursor: pointer; }
+        .total-display-container { 
+            margin-bottom: 10px; 
+            padding: 10px; 
+            border: 1px solid #ccc; 
+            background-color: #f9f9f9; 
+            text-align: right; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .total-label { color: #555; }
+        .total-amount { font-weight: bold; font-size: 1.1em; color: #000; }
     </style>
 </head>
 <body>
     <h3>Lên Đơn Hàng Mới</h3>
+    
+    <input type="date" id="deliveryDate" placeholder="Ngày nhận hàng"> 
     <input type="text" id="customer" placeholder="Tên khách hàng">
-    <input type="text" id="product" placeholder="Mã hàng hóa">
-    <input type="number" id="quantity" placeholder="Số lượng">
-    <input type="number" id="price" placeholder="Đơn giá">
+    
+    <select id="product">
+        <option value="">Chọn Sản phẩm (Mã hàng hóa)</option>
+        <option value="PE">Hạt nhựa PE (Polyethylene)</option>
+        <option value="PP">Hạt nhựa PP (Polypropylene)</option>
+        <option value="PVC">Hạt nhựa PVC (Polyvinyl Chloride)</option>
+        <option value="PET">Hạt nhựa PET (Polyethylene Terephthalate)</option>
+        <option value="ABS">Hạt nhựa ABS (Acrylonitrile Butadiene Styrene)</option>
+        <option value="PS">Hạt nhựa PS (Polystyrene)</option>
+        <option value="PA">Hạt nhựa PA (Polyamide/Nylon)</option>
+    </select>
+    
+    <input type="number" id="quantity" placeholder="Số lượng" oninput="calculateTotal()">
+    <input type="number" id="price" placeholder="Đơn giá" oninput="calculateTotal()">
+    
+    <div class="total-display-container">
+        <span class="total-label">Thành tiền:</span>
+        <span class="total-amount" id="totalAmountDisplay" data-value="0">0 VND</span>
+    </div>
+    
     <button onclick="sendOrder()">Gửi Đơn Hàng</button>
 
 <script>
@@ -25,27 +56,53 @@
     // CHỈ KHAI BÁO URL ở ngoài để dễ đọc
     const n8nWebhookUrl = 'https://n8ncamundatest1.app.n8n.cloud/webhook-test/05aebebd-962b-4285-b2af-a62300358208';
 
-    function sendOrder() {
-        // TOÀN BỘ LOGIC LẤY DATA VÀ GỌI FETCH PHẢI Ở TRONG HÀM NÀY
+    /**
+     * Hàm tính toán Thành tiền (Số lượng X Giá)
+     */
+    function calculateTotal() {
+        const quantity = parseFloat(document.getElementById("quantity").value) || 0;
+        const price = parseFloat(document.getElementById("price").value) || 0;
         
-        // 1. Lấy dữ liệu khi người dùng bấm nút
+        const total = quantity * price;
+        
+        // Định dạng số để hiển thị
+        const formattedTotal = total.toLocaleString('vi-VN', { 
+            style: 'currency', 
+            currency: 'VND',
+            minimumFractionDigits: 0
+        });
+
+        // Cập nhật hiển thị
+        document.getElementById("totalAmountDisplay").textContent = formattedTotal;
+        // Lưu giá trị số vào data-value để gửi đi
+        document.getElementById("totalAmountDisplay").dataset.value = total;
+    }
+
+    function sendOrder() {
+        // Lấy dữ liệu khi người dùng bấm nút
         let data = {
             customer: document.getElementById("customer").value,
-            product: document.getElementById("product").value,
+            // Lấy giá trị từ Select (Drop-down list)
+            product: document.getElementById("product").value, 
             quantity: document.getElementById("quantity").value,
             price: document.getElementById("price").value,
+            
+            deliveryDate: document.getElementById("deliveryDate").value,
+            // Lấy giá trị số từ data-value của trường Thành tiền
+            totalAmount: document.getElementById("totalAmountDisplay").dataset.value, 
+            
             action: "create_order",
-            // Lấy User ID
             telegram_user_id: tg.initDataUnsafe?.user?.id 
         };
 
         // 2. Kiểm tra dữ liệu cơ bản (Validation)
-        if (!data.customer || !data.product || data.quantity <= 0) {
-            tg.showAlert("Vui lòng điền đủ Tên khách hàng, Mã hàng và Số lượng hợp lệ.");
+        // Bổ sung kiểm tra product (select) phải có giá trị
+        if (!data.customer || !data.product || data.quantity <= 0 || !data.deliveryDate || data.totalAmount <= 0) {
+            tg.showAlert("Vui lòng điền đủ Tên khách hàng, Chọn Sản phẩm, Số lượng, Đơn giá hợp lệ và Ngày nhận hàng.");
             return; // Dừng nếu dữ liệu không hợp lệ
         }
 
-        // 3. Thực hiện FETCH (Chỉ khi người dùng bấm nút)
+        // 3. Thực hiện FETCH
         fetch(n8nWebhookUrl, {
             method: 'POST',
             headers: {
@@ -54,7 +111,6 @@
             body: JSON.stringify(data),
         })
         .then(response => {
-            // Kiểm tra HTTP status code (ví dụ: 200, 202)
             if (response.ok) {
                 tg.showAlert("Đã gửi đơn hàng thành công!");
                 tg.close();
@@ -63,10 +119,12 @@
             }
         })
         .catch((error) => {
-            // Lỗi network hoặc lỗi khác
             tg.showAlert("Lỗi kết nối mạng hoặc server: " + error.message);
         });
     }
+
+    // Tính toán lần đầu khi load trang
+    calculateTotal();
 </script>
 </body>
 </html>
